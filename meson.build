@@ -478,6 +478,12 @@ if not get_option('libiscsi').auto() or have_block
                          required: get_option('libiscsi'),
                          method: 'pkg-config', kwargs: static_kwargs)
 endif
+libnvmf = not_found
+if not get_option('libnvmf').auto() or have_block
+  libnvmf = dependency('libnvmf', version: '>=0.1',
+                         required: get_option('libnvmf'),
+                         method: 'pkg-config', kwargs: static_kwargs)
+endif
 zstd = not_found
 if not get_option('zstd').auto() or have_block
   zstd = dependency('libzstd', version: '>=1.4.0',
@@ -1150,6 +1156,7 @@ config_host_data.set('CONFIG_LIBATTR', have_old_libattr)
 config_host_data.set('CONFIG_LIBCAP_NG', libcap_ng.found())
 config_host_data.set('CONFIG_EBPF', libbpf.found())
 config_host_data.set('CONFIG_LIBISCSI', libiscsi.found())
+config_host_data.set('CONFIG_LIBNVMF', libnvmf.found())
 config_host_data.set('CONFIG_LIBNFS', libnfs.found())
 config_host_data.set('CONFIG_RBD', rbd.found())
 config_host_data.set('CONFIG_SDL', sdl.found())
@@ -2736,6 +2743,7 @@ summary_info += {'usb net redir':     config_host.has_key('CONFIG_USB_REDIR')}
 summary_info += {'OpenGL support':    config_host.has_key('CONFIG_OPENGL')}
 summary_info += {'GBM':               config_host.has_key('CONFIG_GBM')}
 summary_info += {'libiscsi support':  libiscsi.found()}
+summary_info += {'libnvmf support':   libnvmf.found()}
 summary_info += {'libnfs support':    libnfs.found()}
 if targetos == 'windows'
   if config_host.has_key('CONFIG_GUEST_AGENT')

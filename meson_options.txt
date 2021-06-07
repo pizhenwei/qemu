@@ -68,6 +68,8 @@ option('glusterfs', type : 'feature', value : 'auto',
        description: 'Glusterfs block device driver')
 option('libiscsi', type : 'feature', value : 'auto',
        description: 'libiscsi userspace initiator')
+option('libnvmf', type : 'feature', value : 'auto',
+       description: 'NVMe over Fabric userspace initiator')
 option('libnfs', type : 'feature', value : 'auto',
        description: 'libnfs block device driver')
 option('mpath', type : 'feature', value : 'auto',

@@ -393,6 +393,7 @@ vss_win32_sdk="$default_feature"
 win_sdk="no"
 want_tools="$default_feature"
 libiscsi="auto"
+libnvmf="auto"
 libnfs="auto"
 coroutine=""
 coroutine_pool="$default_feature"
@@ -1126,6 +1127,10 @@ for opt do
   --disable-libiscsi) libiscsi="disabled"
   ;;
   --enable-libiscsi) libiscsi="enabled"
+  ;;
+  --disable-libnvmf) libnvmf="disabled"
+  ;;
+  --enable-libnvmf) libnvmf="enabled"
   ;;
   --disable-libnfs) libnfs="disabled"
   ;;
@@ -1889,6 +1894,7 @@ disabled with --disable-FEATURE, default is enabled if available
   spice-protocol  spice-protocol
   rbd             rados block device (rbd)
   libiscsi        iscsi support
+  libnvmf         NVMe over Fabric support
   libnfs          nfs support
   smartcard       smartcard support (libcacard)
   u2f             U2F support (u2f-emu)
@@ -6448,7 +6454,7 @@ if test "$skip_meson" = no; then
         -Dvhost_user_blk_server=$vhost_user_blk_server -Dmultiprocess=$multiprocess \
         -Dfuse=$fuse -Dfuse_lseek=$fuse_lseek -Dguest_agent_msi=$guest_agent_msi -Dbpf=$bpf\
         $(if test "$default_features" = no; then echo "-Dauto_features=disabled"; fi) \
-	-Dtcg_interpreter=$tcg_interpreter \
+	-Dtcg_interpreter=$tcg_interpreter -Dlibnvmf=$libnvmf\
         $cross_arg \
         "$PWD" "$source_path"
 
