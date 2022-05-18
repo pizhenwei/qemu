@@ -40,9 +40,17 @@ enum virtio_balloon_free_page_hint_status {
     FREE_PAGE_HINT_S_DONE = 3,
 };
 
+typedef struct VirtIOBalloonPFNList {
+    uint32_t pfn;
+    QTAILQ_ENTRY(VirtIOBalloonPFNList) entry;
+} VirtIOBalloonPFNList;
+
+typedef QTAILQ_HEAD(VirtIOBalloonPFNHead, VirtIOBalloonPFNList)
+    VirtIOBalloonPFNHead;
+
 struct VirtIOBalloon {
     VirtIODevice parent_obj;
-    VirtQueue *ivq, *dvq, *svq, *free_page_vq, *reporting_vq;
+    VirtQueue *ivq, *dvq, *svq, *free_page_vq, *reporting_vq, *recover_vq;
     uint32_t free_page_hint_status;
     uint32_t num_pages;
     uint32_t actual;
@@ -71,6 +79,13 @@ struct VirtIOBalloon {
 
     bool qemu_4_0_config_size;
     uint32_t poison_val;
+
+    /* Memory recover VQ IN elem */
+    uint32_t corrupted_pages;
+    VirtQueueElement *recover_in_elem;
+    union VirtIOBalloonPFNHead corrupted_pfns;
+    union VirtIOBalloonPFNHead recovered_pfns;
+    union VirtIOBalloonPFNHead failed_pfns;
 };
 
 #endif

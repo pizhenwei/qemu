@@ -387,6 +387,235 @@ skip_element:
     }
 }
 
+static void virtio_balloon_recover_clear_event(VirtIOBalloonPFNHead *list)
+{
+    VirtIOBalloonPFNList *pfn_entry;
+
+    while (!QTAILQ_EMPTY(list)) {
+        pfn_entry = QTAILQ_FIRST(list);
+        QTAILQ_REMOVE(list, pfn_entry, entry);
+        g_free(pfn_entry);
+    }
+}
+
+static size_t virtio_balloon_recover_event(VirtIODevice *vdev, uint8_t status)
+{
+    VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
+    struct virtio_balloon_recover vbr = {0};
+    VirtIOBalloonPFNHead *list;
+    VirtIOBalloonPFNList *pfn_entry;
+    VirtQueueElement *elem = s->recover_in_elem;
+    size_t offset = 0;
+    size_t total;
+    unsigned int pfn;
+
+    switch (status) {
+    case VIRTIO_BALLOON_R_STATUS_CORRUPTED:
+        list = &s->corrupted_pfns;
+        break;
+    case VIRTIO_BALLOON_R_STATUS_RECOVERED:
+        list = &s->recovered_pfns;
+        break;
+    case VIRTIO_BALLOON_R_STATUS_FAILED:
+        list = &s->failed_pfns;
+        break;
+    default:
+        return 0;
+    };
+
+    if (QTAILQ_EMPTY(list)) {
+        return 0;
+    }
+
+    vbr.cmd = VIRTIO_BALLOON_R_CMD_RESPONSE;
+    vbr.status = status;
+    iov_from_buf(elem->in_sg, elem->in_num, offset, &vbr, sizeof(vbr));
+
+    offset += sizeof(vbr);
+    total = iov_size(elem->in_sg, elem->in_num);
+
+    while (!QTAILQ_EMPTY(list) && ((offset + sizeof(pfn) <= total))) {
+        pfn_entry = QTAILQ_FIRST(list);
+        virtio_stl_p(vdev, &pfn, pfn_entry->pfn);
+        iov_from_buf(elem->in_sg, elem->in_num, offset, &pfn, sizeof(pfn));
+        QTAILQ_REMOVE(list, pfn_entry, entry);
+        offset += sizeof(pfn);
+
+        trace_virtio_balloon_recover_status(status, pfn_entry->pfn);
+        g_free(pfn_entry);
+    }
+
+    return offset;
+}
+
+static void virtio_balloon_recover_response(VirtIODevice *vdev, VirtQueue *vq)
+{
+    VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
+    size_t ret;
+
+    if (!s->recover_in_elem) {
+        return;
+    }
+
+    ret = virtio_balloon_recover_event(vdev, VIRTIO_BALLOON_R_STATUS_CORRUPTED);
+    if (ret > 0) {
+        goto got;
+    }
+
+    ret = virtio_balloon_recover_event(vdev, VIRTIO_BALLOON_R_STATUS_RECOVERED);
+    if (ret > 0) {
+        goto got;
+    }
+
+    ret = virtio_balloon_recover_event(vdev, VIRTIO_BALLOON_R_STATUS_FAILED);
+    if (ret > 0) {
+        goto got;
+    }
+
+    return;
+
+got:
+   virtqueue_push(vq, s->recover_in_elem, ret);
+   virtio_notify(vdev, vq);
+   g_free(s->recover_in_elem);
+   s->recover_in_elem = NULL;
+}
+
+static void balloon_recover_page(VirtIODevice *vdev, VirtQueue *vq,
+                                 uint32_t pfn,
+                                 MemoryRegion *mr, hwaddr mr_offset)
+{
+    VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
+    void *addr = memory_region_get_ram_ptr(mr) + mr_offset;
+    ram_addr_t rb_offset;
+    RAMBlock *rb;
+    size_t rb_page_size;
+    VirtIOBalloonPFNList *pfn_entry;
+
+    rb = qemu_ram_block_from_host(addr, false, &rb_offset);
+    rb_page_size = qemu_ram_pagesize(rb);
+
+    pfn_entry = g_new0(VirtIOBalloonPFNList, 1);
+    pfn_entry->pfn = pfn;
+
+    /* if a normal page, remap this address and response immediately */
+    if (rb_page_size == BALLOON_PAGE_SIZE) {
+        if (qemu_ram_remap(pfn << VIRTIO_BALLOON_PFN_SHIFT,
+                           BALLOON_PAGE_SIZE)) {
+            QTAILQ_INSERT_TAIL(&s->failed_pfns, pfn_entry, entry);
+        } else {
+            QTAILQ_INSERT_TAIL(&s->recovered_pfns, pfn_entry, entry);
+        }
+    } else {
+        /* TODO handle the HugePage */
+        QTAILQ_INSERT_TAIL(&s->failed_pfns, pfn_entry, entry);
+    }
+
+    virtio_balloon_recover_response(vdev, vq);
+}
+
+static void virtio_balloon_recover_request(VirtIODevice *vdev, VirtQueue *vq,
+                                           VirtQueueElement *elem)
+{
+    MemoryRegionSection section;
+    struct virtio_balloon_recover vbr = {};
+    size_t offset = 0;
+    uint32_t pfn;
+
+    iov_to_buf(elem->out_sg, elem->out_num, offset, &vbr, sizeof(vbr));
+    if (vbr.cmd != VIRTIO_BALLOON_R_CMD_RECOVER) {
+        goto out;
+    }
+
+    offset += sizeof(vbr);
+    while (iov_to_buf(elem->out_sg, elem->out_num, offset, &pfn, 4) == 4) {
+        unsigned int p = virtio_ldl_p(vdev, &pfn);
+        hwaddr pa;
+
+        pa = (hwaddr) p << VIRTIO_BALLOON_PFN_SHIFT;
+        offset += 4;
+
+        section = memory_region_find(get_system_memory(), pa,
+                                     BALLOON_PAGE_SIZE);
+        if (!section.mr) {
+            continue;
+        }
+
+        if (!memory_region_is_ram(section.mr) ||
+            memory_region_is_rom(section.mr) ||
+            memory_region_is_romd(section.mr)) {
+            memory_region_unref(section.mr);
+            continue;
+        }
+
+        trace_virtio_balloon_handle_recover(pa);
+
+        balloon_recover_page(vdev, vq, p, section.mr,
+                             section.offset_within_region);
+        memory_region_unref(section.mr);
+    }
+
+out:
+    virtqueue_push(vq, elem, 0);
+    virtio_notify(vdev, vq);
+    g_free(elem);
+}
+
+static void virtio_balloon_handle_recover(VirtIODevice *vdev, VirtQueue *vq)
+{
+    VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
+    VirtQueueElement *elem;
+
+    for (;;) {
+        elem = virtqueue_pop(vq, sizeof(VirtQueueElement));
+        if (!elem) {
+            break;
+        }
+
+        if (migration_in_incoming_postcopy() || migration_in_bg_snapshot()) {
+            goto skip_element;
+        }
+
+        /* read & write in a single request is not supported */
+        if (elem->out_num && elem->in_num) {
+            continue;
+        }
+
+        /* guest read request */
+        if (!elem->out_num && elem->in_num) {
+            if (s->recover_in_elem) {
+                /* only one guest read request is supported currently */
+                goto skip_element;
+            }
+
+            if (iov_size(elem->in_sg, elem->in_num) <
+                (sizeof(struct virtio_balloon_recover) + sizeof(uint32_t))) {
+                goto skip_element; /* at least report one PFN */
+            }
+
+            s->recover_in_elem = elem;
+            virtio_balloon_recover_response(vdev, vq);
+            continue;
+        }
+
+        /* guest write request */
+        if (elem->out_num && !elem->in_num) {
+            if (iov_size(elem->out_sg, elem->out_num) <
+                sizeof(struct virtio_balloon_recover)) {
+                goto skip_element; /* incomplete request? */
+            }
+
+            virtio_balloon_recover_request(vdev, vq, elem);
+            continue;
+        }
+
+skip_element:
+        virtqueue_push(vq, elem, 0);
+        virtio_notify(vdev, vq);
+        g_free(elem);
+    }
+}
+
 static void virtio_balloon_handle_output(VirtIODevice *vdev, VirtQueue *vq)
 {
     VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
@@ -919,6 +1148,13 @@ static void virtio_balloon_device_realize(DeviceState *dev, Error **errp)
                                            virtio_balloon_handle_report);
     }
 
+    if (virtio_has_feature(s->host_features, VIRTIO_BALLOON_F_RECOVER)) {
+        s->recover_vq = virtio_add_queue(vdev, 32,
+                                           virtio_balloon_handle_recover);
+        QTAILQ_INIT(&s->recovered_pfns);
+        QTAILQ_INIT(&s->failed_pfns);
+        QTAILQ_INIT(&s->corrupted_pfns);
+    }
     reset_stats(s);
 }
 
@@ -945,6 +1181,12 @@ static void virtio_balloon_device_unrealize(DeviceState *dev)
     if (s->reporting_vq) {
         virtio_delete_queue(s->reporting_vq);
     }
+    if (s->recover_vq) {
+        virtio_delete_queue(s->recover_vq);
+        virtio_balloon_recover_clear_event(&s->corrupted_pfns);
+        virtio_balloon_recover_clear_event(&s->recovered_pfns);
+        virtio_balloon_recover_clear_event(&s->failed_pfns);
+    }
     virtio_cleanup(vdev);
 }
 
@@ -963,6 +1205,12 @@ static void virtio_balloon_device_reset(VirtIODevice *vdev)
     }
 
     s->poison_val = 0;
+
+    if (s->recover_in_elem != NULL) {
+        virtqueue_unpop(s->recover_vq, s->recover_in_elem, 0);
+        g_free(s->recover_in_elem);
+        s->recover_in_elem = NULL;
+    }
 }
 
 static void virtio_balloon_set_status(VirtIODevice *vdev, uint8_t status)
@@ -1034,6 +1282,8 @@ static Property virtio_balloon_properties[] = {
                     VIRTIO_BALLOON_F_PAGE_POISON, true),
     DEFINE_PROP_BIT("free-page-reporting", VirtIOBalloon, host_features,
                     VIRTIO_BALLOON_F_REPORTING, false),
+    DEFINE_PROP_BIT("page-recover", VirtIOBalloon, host_features,
+                    VIRTIO_BALLOON_F_RECOVER, true),
     /* QEMU 4.0 accidentally changed the config size even when free-page-hint
      * is disabled, resulting in QEMU 3.1 migration incompatibility.  This
      * property retains this quirk for QEMU 4.1 machine types.
