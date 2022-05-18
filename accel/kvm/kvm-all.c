@@ -1181,7 +1181,11 @@ static void kvm_unpoison_all(void *param)
 
     QLIST_FOREACH_SAFE(page, &hwpoison_page_list, list, next_page) {
         QLIST_REMOVE(page, list);
-        qemu_ram_remap(page->ram_addr, TARGET_PAGE_SIZE);
+        if (qemu_ram_remap(page->ram_addr, TARGET_PAGE_SIZE)) {
+            error_report("Could not remap addr: "RAM_ADDR_FMT "@"
+            RAM_ADDR_FMT "", (ram_addr_t)TARGET_PAGE_SIZE, page->ram_addr);
+            abort();
+        }
         g_free(page);
     }
 }

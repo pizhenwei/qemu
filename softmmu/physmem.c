@@ -2238,7 +2238,7 @@ void qemu_ram_free(RAMBlock *block)
 }
 
 #ifndef _WIN32
-void qemu_ram_remap(ram_addr_t addr, ram_addr_t length)
+int qemu_ram_remap(ram_addr_t addr, ram_addr_t length)
 {
     RAMBlock *block;
     ram_addr_t offset;
@@ -2270,13 +2270,15 @@ void qemu_ram_remap(ram_addr_t addr, ram_addr_t length)
                     error_report("Could not remap addr: "
                                  RAM_ADDR_FMT "@" RAM_ADDR_FMT "",
                                  length, addr);
-                    exit(1);
+                    return -errno;
                 }
                 memory_try_enable_merging(vaddr, length);
                 qemu_ram_setup_dump(vaddr, length);
             }
         }
     }
+
+    return 0;
 }
 #endif /* !_WIN32 */
 
