@@ -37,6 +37,7 @@
 #define VIRTIO_BALLOON_F_FREE_PAGE_HINT	3 /* VQ to report free pages */
 #define VIRTIO_BALLOON_F_PAGE_POISON	4 /* Guest is using page poisoning */
 #define VIRTIO_BALLOON_F_REPORTING	5 /* Page reporting virtqueue */
+#define VIRTIO_BALLOON_F_RECOVER	6 /* Memory recover virtqueue */
 
 /* Size of a PFN in the balloon interface. */
 #define VIRTIO_BALLOON_PFN_SHIFT 12
@@ -59,6 +60,8 @@ struct virtio_balloon_config {
 	};
 	/* Stores PAGE_POISON if page poisoning is in use */
 	uint32_t poison_val;
+	/* Number of hardware corrupted pages, guest read only */
+	uint32_t corrupted_pages;
 };
 
 #define VIRTIO_BALLOON_S_SWAP_IN  0   /* Amount of memory swapped in */
@@ -115,5 +118,18 @@ struct virtio_balloon_stat {
 	__virtio16 tag;
 	__virtio64 val;
 } QEMU_PACKED;
+
+#define VIRTIO_BALLOON_R_CMD_RECOVER      0
+#define VIRTIO_BALLOON_R_CMD_RESPONSE     0x80
+
+#define VIRTIO_BALLOON_R_STATUS_CORRUPTED 0
+#define VIRTIO_BALLOON_R_STATUS_RECOVERED 1
+#define VIRTIO_BALLOON_R_STATUS_FAILED    2
+
+struct virtio_balloon_recover {
+        uint8_t cmd;
+        uint8_t status;
+        uint8_t padding[6];
+};
 
 #endif /* _LINUX_VIRTIO_BALLOON_H */
