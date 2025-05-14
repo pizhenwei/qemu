@@ -1,0 +1,22 @@
+    sed -e 's/__aligned_u64/__u64 __attribute__((aligned(8)))/g' \
+        -e 's/__u\([0-9][0-9]*\)/uint\1_t/g' \
+        -e 's/u\([0-9][0-9]*\)/uint\1_t/g' \
+        -e 's/__s\([0-9][0-9]*\)/int\1_t/g' \
+        -e 's/__le\([0-9][0-9]*\)/uint\1_t/g' \
+        -e 's/__be\([0-9][0-9]*\)/uint\1_t/g' \
+        -e 's/"\(input-event-codes\.h\)"/"standard-headers\/linux\/\1"/' \
+        -e 's/<linux\/\([^>]*\)>/"standard-headers\/linux\/\1"/' \
+        -e 's/__bitwise//' \
+        -e 's/__attribute__((packed))/QEMU_PACKED/' \
+        -e 's/__inline__/inline/' \
+        -e 's/__BITS_PER_LONG/HOST_LONG_BITS/' \
+        -e '/\"drm.h\"/d' \
+        -e '/sys\/ioctl.h/d' \
+        -e '/linux\/ioctl.h/d' \
+        -e 's/SW_MAX/SW_MAX_/' \
+        -e 's/atomic_t/int/' \
+        -e 's/__kernel_long_t/long/' \
+        -e 's/__kernel_ulong_t/unsigned long/' \
+        -e 's/struct ethhdr/struct eth_header/' \
+        -e '/\#define _LINUX_ETHTOOL_H/a \\n\#include "net/eth.h"' \
+	/root/source/linux/linux-upstream/include/uapi/rdma/vmw_pvrdma-abi.h > vmw_pvrdma-abi.h

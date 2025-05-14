@@ -1,0 +1,18 @@
+
+# pvrdma.c
+pvrdma_pci_dma_map(uint64_t buffer, uint32_t dmalen, uint64_t dmaaddr) "buffer 0x%"PRIx64", length 0x%"PRIx32", DMA 0x%"PRIx64""
+pvrdma_pci_dma_unmap(uint64_t buffer, uint32_t dmalen) "buffer 0x%"PRIx64", length 0x%"PRIx32""
+pvrdma_post_interrupt(uint32_t vector) "vector 0x%"PRIx32""
+pvrdma_get_reg_val(uint32_t off, uint32_t val) "off 0x%"PRIx32", val 0x%"PRIx32""
+pvrdma_set_reg_val(uint32_t off, uint32_t val) "off 0x%"PRIx32", val 0x%"PRIx32""
+pvrdma_activate_device(void) ""
+pvrdma_unquiesce_device(void) ""
+pvrdma_reset_device(void) ""
+
+# pvrdma_qp.c
+pvrdma_cq_complete(uint32_t cq, const char *opcode, uint64_t wr_id, uint32_t bytelen) "CQ 0x%"PRIx32", opcode %s, wr_id 0x%"PRIx64", length 0x%"PRIx32""
+pvrdma_post_send(uint32_t qp, const char *opcode, uint64_t wr_id) "QP 0x%"PRIx32", opcode %s, wr_id 0x%"PRIx64""
+pvrdma_post_recv(uint32_t qp, uint64_t wr_id) "QP 0x%"PRIx32", wr_id 0x%"PRIx64""
+
+# pvrdma_cmd.c
+pvrdma_exec_cmd(const char *cmdname, uint32_t cmd, int retval) "CMD %s(0x%"PRIx32"), retval %d"

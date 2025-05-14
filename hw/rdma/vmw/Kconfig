@@ -1,0 +1,4 @@
+config VMW_PVRDMA
+    bool
+    default y
+    select VMXNET3_PCI

@@ -8,6 +8,7 @@
 { 'include': 'block-core.json' }
 { 'include': 'common.json' }
 { 'include': 'crypto.json' }
+{ 'include': 'rdma.json' }
 
 ##
 # = QEMU Object Model (QOM)
@@ -1006,6 +1007,98 @@
   'data': { '*cpu-affinity': ['uint16'],
             '*node-affinity': ['uint16'] } }
 
+##
+# @RdmaDevProperties:
+#
+# Properties for RDMA device.
+#
+# @dev-phys-port-cnt: xxx
+#
+# @dev-max-uc: xxx
+#
+# @dev-max-qp: xxx
+#
+# @dev-max-qp-wr: xxx
+#
+# @dev-max-sge: xxx
+#
+# @dev-max-sge-rd: xxx
+#
+# @dev-max-cq: xxx
+#
+# @dev-max-cqe: xxx
+#
+# @dev-max-mr: xxx
+#
+# @dev-max-pd: xxx
+#
+# @dev-max-ah: xxx
+#
+# @dev-max-mr-size: xxx
+#
+# @dev-max-srq: xxx
+#
+# @dev-max-srq-wr: xxx
+#
+# @dev-max-srq-sge: xxx
+#
+# @port-max-msg-sz: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaDevProperties',
+  'data': { '*dev-phys-port-cnt': 'uint8',
+            '*dev-max-uc': 'uint32',
+            '*dev-max-qp': 'uint32',
+            '*dev-max-qp-wr': 'uint32',
+            '*dev-max-sge': 'uint32',
+            '*dev-max-sge-rd': 'uint32',
+            '*dev-max-cq': 'uint32',
+            '*dev-max-cqe': 'uint32',
+            '*dev-max-mr': 'uint32',
+            '*dev-max-pd': 'uint32',
+            '*dev-max-ah': 'uint32',
+            '*dev-max-mr-size': 'uint64',
+            '*dev-max-srq': 'uint32',
+            '*dev-max-srq-wr': 'uint32',
+            '*dev-max-srq-sge': 'uint32',
+            '*port-max-msg-sz': 'uint32'
+  }
+}
+
+##
+# @RdmaDevIbdevProperties:
+#
+# @mad-chardev: xxx
+#
+# @netdev: xxx
+#
+# @ibport: xxx
+#
+# @ibdev: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaDevIbdevProperties',
+  'base': 'RdmaDevProperties',
+  'data': { 'mad-chardev': 'str',
+            'netdev': 'str',
+            'ibport': 'uint8',
+            'ibdev': 'str'
+  }
+}
+
+##
+# @RdmaDevRoceProperties:
+#
+# @version: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaDevRoceProperties',
+  'base': 'RdmaDevProperties',
+  'data': { 'version': 'RdmaRoceType' }
+}
 
 ##
 # @ObjectType:
@@ -1054,7 +1147,10 @@
     'pef-guest',
     { 'name': 'pr-manager-helper',
       'if': 'CONFIG_LINUX' },
+    'pvrdma',
     'qtest',
+    'rdmadev-ibdev',
+    'rdmadev-roce',
     'rng-builtin',
     'rng-egd',
     { 'name': 'rng-random',
@@ -1126,6 +1222,8 @@
       'pr-manager-helper':          { 'type': 'PrManagerHelperProperties',
                                       'if': 'CONFIG_LINUX' },
       'qtest':                      'QtestProperties',
+      'rdmadev-ibdev':              'RdmaDevIbdevProperties',
+      'rdmadev-roce':               'RdmaDevRoceProperties',
       'rng-builtin':                'RngProperties',
       'rng-egd':                    'RngEgdProperties',
       'rng-random':                 { 'type': 'RngRandomProperties',

@@ -31,6 +31,7 @@ source pcmcia/Kconfig
 source pci/Kconfig
 source remote/Kconfig
 source rtc/Kconfig
+source rdma/Kconfig
 source scsi/Kconfig
 source sd/Kconfig
 source sensor/Kconfig

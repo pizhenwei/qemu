@@ -1,0 +1,9 @@
+# See docs/devel/tracing.rst for syntax documentation.
+
+# ibdev-mux.c
+ibdev_mux(uint32_t msg_type, uint32_t opcode, uint32_t umad_len, uint32_t err_code) "msg-type %d, opcode %d, umad_len %d, err-code %d"
+ibdev_gid_changed(const char *action, uint64_t subnet, uint64_t ifid) "action %s, subnet-prefix 0x%"PRIx64", ifid=0x%"PRIx64
+ibdev_get_gid(const char *gid, uint32_t dev_index, uint32_t host_index) "GID %s, dev-index %d, host-index %d"
+
+# ibdev.c
+ibdev_create_mr(uint32_t handle, const char *type, uint64_t iova, uint32_t length, void *buffer) "mr-handle %d, type %s, iova 0x%"PRIx64", length %d, host-buffer %p"

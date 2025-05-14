@@ -46,6 +46,7 @@ qapi_all_modules = [
   'net',
   'pragma',
   'qom',
+  'rdma',
   'replay',
   'run-state',
   'sockets',

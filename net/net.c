@@ -793,6 +793,22 @@ static ssize_t nc_sendv_compat(NetClientState *nc, const struct iovec *iov,
     return ret;
 }
 
+static inline int qemu_deliver_roce(NetClientState *nc, const struct iovec *iov, int iovcnt)
+{
+    NICState *ncs;
+
+    if (nc->info->type != NET_CLIENT_DRIVER_NIC) {
+        return -ENOTSUP; /* NIC device is supported only */
+    }
+
+    ncs = qemu_get_nic(nc);
+    if (!ncs->recv_roce) {
+        return -ENODEV; /* no such associated RoCE device */
+    }
+
+    return ncs->recv_roce(nc, iov, iovcnt, ncs->roce_opaque);
+}
+
 static ssize_t qemu_deliver_packet_iov(NetClientState *sender,
                                        unsigned flags,
                                        const struct iovec *iov,
@@ -830,12 +846,18 @@ static ssize_t qemu_deliver_packet_iov(NetClientState *sender,
         iov = iov_copy;
     }
 
+    ret = qemu_deliver_roce(nc, iov, iovcnt);
+    if (ret > 0) {
+        goto recv_done;
+    }
+
     if (nc->info->receive_iov) {
         ret = nc->info->receive_iov(nc, iov, iovcnt);
     } else {
         ret = nc_sendv_compat(nc, iov, iovcnt, flags);
     }
 
+recv_done:
     if (owned_reentrancy_guard) {
         owned_reentrancy_guard->engaged_in_io = false;
     }

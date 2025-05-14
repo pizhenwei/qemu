@@ -1,0 +1,669 @@
+# -*- Mode: Python -*-
+# vim: filetype=python
+#
+# This work is licensed under the terms of the GNU GPL, version 2 or later.
+# See the COPYING file in the top-level directory.
+
+##
+# @RDMA_GID_STATUS_CHANGED:
+#
+# Emitted when guest driver adds/deletes GID to/from device
+#
+# @netdev: RoCE Network Device name
+#
+# @gid-status: Add or delete indication
+#
+# @subnet-prefix: Subnet Prefix
+#
+# @interface-id: Interface ID
+#
+# Since: 4.0
+#
+##
+{ 'event': 'RDMA_GID_STATUS_CHANGED',
+  'data': { 'netdev'        : 'str',
+            'gid-status'    : 'bool',
+            'subnet-prefix' : 'uint64',
+            'interface-id'  : 'uint64' } }
+
+##
+# = RDMA devices
+##
+
+##
+# @RdmaGidType:
+#
+# An enumeration of RDMA GID type.
+#
+# @ib: xxx
+#
+# @roce-v1: xxx
+#
+# @roce-v2: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaGidType',
+  'prefix': 'RDMADEV_GID_TYPE',
+  'data': [ 'ib',
+            'roce-v1',
+            'roce-v2' ] }
+
+##
+# @RdmaGid:
+#
+# RDMA GID.
+#
+# @type: xxx
+#
+# @index: xxx
+#
+# @gid: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaGid',
+  'data': { 'type': 'RdmaGidType',
+            'index': 'uint8',
+            'gid': 'str' } }
+
+##
+# @RdmaAtomicCap:
+#
+# An enumeration of RDMA atomic capability.
+#
+# @none: xxx
+#
+# @hca: xxx
+#
+# @glob: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaAtomicCap',
+  'prefix': 'RDMADEV_ATOMIC_CAP',
+  'data': [ 'none',
+            'hca',
+            'glob' ] }
+
+##
+# @RdmaDeviceCap:
+#
+# An enumeration of RDMA device capability.
+#
+# @resize-max-wr: xxx
+#
+# @bad-pkey-cntr: xxx
+#
+# @bad-qkey-cntr: xxx
+#
+# @raw-multi: xxx
+#
+# @auto-path-mig: xxx
+#
+# @change-phy-port: xxx
+#
+# @ud-av-port-enforce: xxx
+#
+# @curr-qp-state-mod: xxx
+#
+# @shutdown-port: xxx
+#
+# @port-active-event: xxx
+#
+# @sys-image-guid: xxx
+#
+# @rc-rnr-nak-gen: xxx
+#
+# @srq-resize: xxx
+#
+# @n-notify-cq: xxx
+#
+# @mem-window: xxx
+#
+# @ud-ip-csum: xxx
+#
+# @xrc: xxx
+#
+# @mem-mgt-extensions: xxx
+#
+# @mem-window-type-2a: xxx
+#
+# @mem-window-type-2b: xxx
+#
+# @rc-ip-csum: xxx
+#
+# @raw-ip-csum: xxx
+#
+# @managed-flow-steering: xxx
+#
+# @raw-scatter-fcs: xxx
+#
+# @pci-write-end-padding: xxx
+#
+# @flush-global: xxx
+#
+# @flush-persistent: xxx
+#
+# @atomic-write: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaDeviceCap',
+  'prefix': 'RDMADEV_DEVICE',
+  'data': [ 'resize-max-wr',
+            'bad-pkey-cntr',
+            'bad-qkey-cntr',
+            'raw-multi',
+            'auto-path-mig',
+            'change-phy-port',
+            'ud-av-port-enforce',
+            'curr-qp-state-mod',
+            'shutdown-port',
+            'port-active-event',
+            'sys-image-guid',
+            'rc-rnr-nak-gen',
+            'srq-resize',
+            'n-notify-cq',
+            'mem-window',
+            'ud-ip-csum',
+            'xrc',
+            'mem-mgt-extensions',
+            'mem-window-type-2a',
+            'mem-window-type-2b',
+            'rc-ip-csum',
+            'raw-ip-csum',
+            'managed-flow-steering',
+            'raw-scatter-fcs',
+            'pci-write-end-padding',
+            'flush-global',
+            'flush-persistent',
+            'atomic-write' ] }
+
+##
+# @RdmaDevAttr:
+#
+# RDMA device attributes
+#
+#
+# @max-mr-size: xxx
+#
+# @page-size-cap: xxx
+#
+# @max-uc: xxx
+#
+# @max-qp: xxx
+#
+# @max-qp-wr: xxx
+#
+# @device-cap-flags: xxx
+#
+# @max-sge: xxx
+#
+# @max-sge-rd: xxx
+#
+# @max-cq: xxx
+#
+# @max-cqe: xxx
+#
+# @max-mr: xxx
+#
+# @max-pd: xxx
+#
+# @max-qp-rd-atom: xxx
+#
+# @max-ee-rd-atom: xxx
+#
+# @max-res-rd-atom: xxx
+#
+# @max-qp-init-rd-atom: xxx
+#
+# @max-ee-init-rd-atom: xxx
+#
+# @atomic-cap: xxx
+#
+# @max-ee: xxx
+#
+# @max-rdd: xxx
+#
+# @max-mw: xxx
+#
+# @max-raw-ipv6-qp: xxx
+#
+# @max-raw-ethy-qp: xxx
+#
+# @max-mcast-grp: xxx
+#
+# @max-mcast-qp-attach: xxx
+#
+# @max-total-mcast-qp-attach: xxx
+#
+# @max-ah: xxx
+#
+# @max-fmr: xxx
+#
+# @max-map-per-fmr: xxx
+#
+# @max-srq: xxx
+#
+# @max-srq-wr: xxx
+#
+# @max-srq-sge: xxx
+#
+# @max-inline-data: xxx
+#
+# @max-pkeys: xxx
+#
+# @local-ca-ack-delay: xxx
+#
+# @phys-port-cnt: xxx
+#
+# @num-comp-vectors: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaDevAttr',
+  'data': { 'max-mr-size': 'uint64',
+            'page-size-cap': 'uint64',
+            'max-uc': 'int32',
+            'max-qp': 'int32',
+            'max-qp-wr': 'int32',
+            'device-cap-flags': 'uint32',
+            'max-sge': 'int32',
+            'max-sge-rd': 'int32',
+            'max-cq': 'int32',
+            'max-cqe': 'int32',
+            'max-mr': 'int32',
+            'max-pd': 'int32',
+            'max-qp-rd-atom': 'int32',
+            'max-ee-rd-atom': 'int32',
+            'max-res-rd-atom': 'int32',
+            'max-qp-init-rd-atom': 'int32',
+            'max-ee-init-rd-atom': 'int32',
+            'atomic-cap': 'RdmaAtomicCap',
+            'max-ee': 'int32',
+            'max-rdd': 'int32',
+            'max-mw': 'int32',
+            'max-raw-ipv6-qp': 'int32',
+            'max-raw-ethy-qp': 'int32',
+            'max-mcast-grp': 'int32',
+            'max-mcast-qp-attach': 'int32',
+            'max-total-mcast-qp-attach': 'int32',
+            'max-ah': 'int32',
+            'max-fmr': 'int32',
+            'max-map-per-fmr': 'int32',
+            'max-srq': 'int32',
+            'max-srq-wr': 'int32',
+            'max-srq-sge': 'int32',
+            'max-inline-data': 'int32',
+            'max-pkeys': 'uint16',
+            'local-ca-ack-delay': 'uint8',
+            'phys-port-cnt': 'uint8',
+            'num-comp-vectors': 'uint32' } }
+
+##
+# @RdmaMtuType:
+#
+# An enumeration of RDMA MTU type.
+#
+# @256: xxx
+#
+# @512: xxx
+#
+# @1024: xxx
+#
+# @2048: xxx
+#
+# @4096: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaMtuType',
+  'prefix': 'RDMADEV_MTU_TYPE',
+  'data': [ '256',
+            '512',
+            '1024',
+            '2048',
+            '4096' ] }
+
+##
+# @RdmaLinkLayer:
+#
+# An enumeration of RDMA link layer.
+#
+# @infiniband: xxx
+#
+# @ethernet: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaLinkLayer',
+  'prefix': 'RDMADEV_LINK_LAYER',
+  'data': [ 'infiniband',
+            'ethernet' ] }
+
+##
+# @RdmaPortCap:
+#
+#
+# @sm: xxx
+#
+# @notice-sup: xxx
+#
+# @trap-sup: xxx
+#
+# @opt-ipd-sup: xxx
+#
+# @auto-migr-sup: xxx
+#
+# @sl-map-sup: xxx
+#
+# @mkey-nvram: xxx
+#
+# @pkey-nvram: xxx
+#
+# @led-info-sup: xxx
+#
+# @sm-disabled: xxx
+#
+# @sys-image-guid-sup: xxx
+#
+# @pkey-sw-ext-port-trap-sup: xxx
+#
+# @extended-speeds-sup: xxx
+#
+# @cap-mask2-sup: xxx
+#
+# @cm-sup: xxx
+#
+# @snmp-tunnel-sup: xxx
+#
+# @reinit-sup: xxx
+#
+# @device-mgmt-sup: xxx
+#
+# @vendor-class-sup: xxx
+#
+# @dr-notice-sup: xxx
+#
+# @cap-mask-notice-sup: xxx
+#
+# @boot-mgmt-sup: xxx
+#
+# @link-latency-sup: xxx
+#
+# @client-reg-sup: xxx
+#
+# @ip-based-gids: xxx
+#
+# @link-speed-width-table-sup: xxx
+#
+# @vendor-specific-mads-table-sup: xxx
+#
+# @mcast-pkey-trap-suppression-sup: xxx
+#
+# @mcast-fdb-top-sup: xxx
+#
+# @hierarchy-info-sup: xxx
+#
+# An enumeration of RDMA port capability.
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaPortCap',
+  'prefix': 'RDMADEV_PORT',
+  'data': [ 'sm',
+            'notice-sup',
+            'trap-sup',
+            'opt-ipd-sup',
+            'auto-migr-sup',
+            'sl-map-sup',
+            'mkey-nvram',
+            'pkey-nvram',
+            'led-info-sup',
+            'sm-disabled',
+            'sys-image-guid-sup',
+            'pkey-sw-ext-port-trap-sup',
+            'extended-speeds-sup',
+            'cap-mask2-sup',
+            'cm-sup',
+            'snmp-tunnel-sup',
+            'reinit-sup',
+            'device-mgmt-sup',
+            'vendor-class-sup',
+            'dr-notice-sup',
+            'cap-mask-notice-sup',
+            'boot-mgmt-sup',
+            'link-latency-sup',
+            'client-reg-sup',
+            'ip-based-gids',
+            'link-speed-width-table-sup',
+            'vendor-specific-mads-table-sup',
+            'mcast-pkey-trap-suppression-sup',
+            'mcast-fdb-top-sup',
+            'hierarchy-info-sup' ] }
+
+
+##
+# @RdmaPortCap2:
+#
+# An enumeration of RDMA port capability.
+#
+# @set-node-desc-sup: xxx
+#
+# @info-ext-sup: xxx
+#
+# @virt-sup: xxx
+#
+# @switch-port-state-table-sup: xxx
+#
+# @link-width-2x-sup: xxx
+#
+# @link-speed-hdr-sup: xxx
+#
+# @link-speed-ndr-sup: xxx
+#
+# @link-speed-xdr-sup: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaPortCap2',
+  'prefix': 'RDMADEV_PORT_CAP2',
+  'data': [ 'set-node-desc-sup',
+            'info-ext-sup',
+            'virt-sup',
+            'switch-port-state-table-sup',
+            'link-width-2x-sup',
+            'link-speed-hdr-sup',
+            'link-speed-ndr-sup',
+            'link-speed-xdr-sup' ] }
+
+##
+# @RdmaSpeed:
+#
+# An enumeration of RDMA speed.
+#
+# RDMA port attributes
+#
+# @5gbps: xxx
+#
+# @10gbps: xxx
+#
+# @25gbps: xxx
+#
+# @50gbps: xxx
+#
+# @100gbps: xxx
+#
+# @200gbps: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaSpeed',
+  'prefix': 'RDMADEV_SPEED',
+  'data': [ '5gbps',
+            '10gbps',
+            '25gbps',
+            '50gbps',
+            '100gbps',
+            '200gbps' ] }
+
+##
+# @RdmaPortAttr:
+#
+# @index: xxx
+#
+# @max-mtu: xxx
+#
+# @active-mtu: xxx
+#
+# @gid-tbl-len: xxx
+#
+# @port-cap-flags: xxx
+#
+# @port-cap-flags2: xxx
+#
+# @max-msg-sz: xxx
+#
+# @bad-pkey-cntr: xxx
+#
+# @qkey-viol-cntr: xxx
+#
+# @pkey-tbl-len: xxx
+#
+# @lid: xxx
+#
+# @sm-lid: xxx
+#
+# @lmc: xxx
+#
+# @max-vl-num: xxx
+#
+# @sm-sl: xxx
+#
+# @subnet-timeout: xxx
+#
+# @init-type-reply: xxx
+#
+# @active-width: xxx
+#
+# @active-speed: xxx
+#
+# @link-layer: xxx
+#
+# @flags: xxx
+#
+# @gids: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaPortAttr',
+  'data': { 'index': 'uint8',
+            'max-mtu': 'RdmaMtuType',
+            'active-mtu': 'RdmaMtuType',
+            'gid-tbl-len': 'uint32',
+            'port-cap-flags': 'uint32',
+            'port-cap-flags2': 'uint32',
+            'max-msg-sz': 'uint32',
+            'bad-pkey-cntr': 'uint32',
+            'qkey-viol-cntr': 'uint32',
+            'pkey-tbl-len': 'uint16',
+            'lid': 'uint16',
+            'sm-lid': 'uint16',
+            'lmc': 'uint8',
+            'max-vl-num': 'uint8',
+            'sm-sl': 'uint8',
+            'subnet-timeout': 'uint8',
+            'init-type-reply': 'uint8',
+            'active-width': 'uint8',
+            'active-speed': 'RdmaSpeed',
+            'link-layer': 'RdmaLinkLayer',
+            'flags': 'uint8',
+            'gids': [ 'RdmaGid' ] } }
+
+##
+# @RdmaDevDriverType:
+#
+# An enumeration of RDMA driver type.
+#
+# @ibdev: xxx
+#
+# @roce: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaDevDriverType',
+  'prefix': 'RDMADEV_DRIVER_TYPE',
+  'data': [ 'ibdev', 'roce' ] }
+
+##
+# @RdmaDevIbdev:
+#
+# RDMA device
+#
+# @mad-chardev: xxx
+#
+# @netdev: xxx
+#
+# @ibdev: xxx
+#
+# @ibport: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaDevIbdev',
+  'data': { 'mad-chardev': 'str',
+            'netdev': 'str',
+            'ibdev': 'str',
+            'ibport': 'uint32' } }
+
+##
+# @RdmaRoceType:
+#
+# An enumeration of RoCE transport type.
+#
+# @roce-v1: xxx
+#
+# @roce-v2: xxx
+#
+# Since: 8.2
+##
+{ 'enum': 'RdmaRoceType',
+  'prefix': 'RDMADEV_ROCE_TYPE',
+  'data': [ 'roce-v1',
+            'roce-v2' ] }
+
+##
+# @RdmaDevRoce:
+#
+# RDMA device
+#
+# @version: xxx
+#
+# Since: 8.2
+##
+{ 'struct': 'RdmaDevRoce',
+  'data': { 'version': 'RdmaRoceType' } }
+
+##
+# @RdmaDev:
+#
+# RDMA device
+#
+# @driver: xxx
+#
+# @attr: xxx
+#
+# @ports: xxx
+#
+# Since: 8.2
+##
+{ 'union': 'RdmaDev',
+  'base': { 'driver': 'RdmaDevDriverType',
+            'attr': 'RdmaDevAttr',
+            'ports': [ 'RdmaPortAttr' ] },
+  'discriminator': 'driver',
+  'data': { 'ibdev': 'RdmaDevIbdev',
+            'roce': 'RdmaDevRoce'
+  }
+}

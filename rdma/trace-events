@@ -1,0 +1,35 @@
+# See docs/devel/tracing.rst for syntax documentation.
+
+# RDMA device management
+rdmadev_init_port(const char *rdev, uint8_t port, const char *nic) "%s, port %d, nic %s"
+
+# RDMA device verbs operations
+rdmadev_alloc_uc(const char *rdev, int uc, int retval) "%s, alloc UC %d, retval %d"
+rdmadev_dealloc_uc(const char *rdev, int uc) "%s, dealloc UC %d"
+
+rdmadev_alloc_pd(const char *rdev, int uc, int retval) "%s, UC %d, PD %d"
+rdmadev_dealloc_pd(const char *rdev, int pd, int retval) "%s, PD %d, retval %d"
+
+rdmadev_create_cq(const char *rdev, int uc, int cqe, int comp_vector, int retval) "%s, UC %d, cqe %d, comp-vector %d, CQ %d"
+rdmadev_destroy_cq(const char *rdev, int cq, int retval) "%s , CQ %d, retval %d"
+rdmadev_req_notify_cq(const char *rdev, int cq_handle, int solicited_only, int retval) "%s, CQ %d, solicited-only %d, retval %d"
+rdmadev_poll_cq(const char *rdev, int cq) "%s, CQ %d"
+
+rdmadev_create_qp(const char *rdev, int pd, uint32_t flags, int srq, int send_cq, int recv_cq, const char *qp_type, int retval) "%s, PD %d, flags 0x%x, SRQ %d, send CQ %d, recv CQ %d, QP type %s, QP %d"
+rdmadev_destroy_qp(const char *rdev, uint32_t qp) "%s, qp %d"
+rdmadev_modify_qp(const char *rdev, int qp, uint32_t attr_mask, int retval) "%s, QP %d, attr-mask 0x%x, retval %d"
+rdmadev_query_qp(const char *rdev, int qp, uint32_t attr_mask, int retval) "%s, QP %d, attr-mask 0x%x, retval %d"
+
+rdmadev_post_recv(const char *rdev, int qp, uint32_t num_sge, int retval) "%s, QP %d, num-sge %d, retval %d"
+rdmadev_post_send(const char *rdev, int qp, uint32_t num_sge, int retval) "%s, QP %d, num-sge %d, retval %d"
+
+rdmadev_create_mr(const char *rdev, int pd, const char *mr_type, uint32_t access, uint32_t length, uint64_t iova, uint32_t sg_num, uint32_t lkey, uint32_t rkey, int mr) "%s, PD %d, MR type %s, access 0x%x, length 0x%x, iova 0x%lx, sg_num %d, LKEY 0x%x, RKEY 0x%x MR %d"
+rdmadev_destroy_mr(const char *rdev, int mr, int retval) "%s, MR %d, retval %d"
+rdmadev_reg_mr(uint32_t mr_handle, uint32_t length, uint64_t iova, uint32_t sg_num, uint32_t lkey, uint32_t rkey, int retval) "mr-handle %d, length 0x%x, iova 0x%"PRIx64", sg-num %d, lkey 0x%x, rkey 0x%x, retval %d"
+
+rdmadev_create_ah(const char *rdev, int pd, int retval) "%s, PD %d, AH %d"
+rdmadev_destroy_ah(const char *rdev, int ah, int retval) "%s, AH %d, retval %d"
+
+rdmadev_create_srq(uint32_t srq_handle, uint32_t pd_handle, int retval) "srq-handle %d, pd-handle %d, retval %d"
+rdmadev_destroy_srq(uint32_t srq_handle) "srq-handle %d"
+rdmadev_post_srq_recv(uint32_t qp_handle, uint32_t num_sge) "srq-handle %d, num-sge %d"

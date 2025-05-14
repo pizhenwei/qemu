@@ -122,6 +122,8 @@ typedef struct NICState {
     NICConf *conf;
     MemReentrancyGuard *reentrancy_guard;
     void *opaque;
+    int (*recv_roce)(NetClientState *nc, const struct iovec *iov, int iovcnt, void *roce_opaque);
+    void *roce_opaque;
     bool peer_deleted;
 } NICState;
 

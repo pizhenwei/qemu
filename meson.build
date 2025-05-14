@@ -1898,6 +1898,13 @@ if not get_option('rdma').auto() or have_system
   endforeach
 endif
 
+libroce = not_found
+if not get_option('libroce').auto() or have_system
+  libroce = dependency('libroce',
+                       required: get_option('libroce'),
+                       method: 'pkg-config')
+endif
+
 cacard = not_found
 if not get_option('smartcard').auto() or have_system
   cacard = dependency('libcacard', required: get_option('smartcard'),
@@ -3335,6 +3342,7 @@ if have_system
     'hw/pci',
     'hw/pci-host',
     'hw/ppc',
+    'hw/rdma/vmw',
     'hw/rtc',
     'hw/s390x',
     'hw/scsi',
@@ -3354,6 +3362,8 @@ if have_system
     'hw/gpio',
     'migration',
     'net',
+    'rdma',
+    'rdma/ibdev',
     'system',
     'ui',
     'hw/remote',
@@ -3392,6 +3402,7 @@ hwcore_ss = ss.source_set()
 io_ss = ss.source_set()
 qmp_ss = ss.source_set()
 qom_ss = ss.source_set()
+rdma_ss = ss.source_set()
 system_ss = ss.source_set()
 specific_fuzz_ss = ss.source_set()
 specific_ss = ss.source_set()
@@ -3474,6 +3485,7 @@ subdir('io')
 subdir('chardev')
 subdir('fsdev')
 subdir('dump')
+subdir('rdma')
 
 if have_block
   block_ss.add(files(
@@ -3751,6 +3763,13 @@ libhwcore = static_library('hwcore', sources: hwcore_ss.sources() + genh,
 hwcore = declare_dependency(link_whole: libhwcore)
 common_ss.add(hwcore)
 
+librdma = static_library('rdma', rdma_ss.sources() + genh,
+                         name_suffix: 'fa',
+                         dependencies: rdma_ss.dependencies(),
+                         build_by_default: false)
+
+rdma = declare_dependency(link_whole: librdma)
+
 ###########
 # Targets #
 ###########
@@ -3768,7 +3787,7 @@ if emulator_modules.length() > 0
   alias_target('modules', emulator_modules)
 endif
 
-system_ss.add(authz, blockdev, chardev, crypto, io, qmp)
+system_ss.add(authz, blockdev, chardev, crypto, io, qmp, rdma)
 common_ss.add(qom, qemuutil)
 
 common_ss.add_all(when: 'CONFIG_SYSTEM_ONLY', if_true: [system_ss])
@@ -4409,6 +4428,12 @@ summary_info += {'vde support':       vde}
 summary_info += {'netmap support':    have_netmap}
 summary_info += {'l2tpv3 support':    have_l2tpv3}
 summary(summary_info, bool_yn: true, section: 'Network backends')
+
+# RDMA backends
+summary_info = {}
+summary_info += {'ibdev support':     rdma}
+summary_info += {'libroce support':   libroce}
+summary(summary_info, bool_yn: true, section: 'RDMA backends')
 
 # Libraries
 summary_info = {}
